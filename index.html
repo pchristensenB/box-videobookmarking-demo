@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Video Bookmark</title>
+  <!-- for-mobile-apps -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+ 
+<!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+
+  <!-- jQuery library-->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <!-- Latest compiled JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+  <!-- Latest version of Box Content Preview for en-US locale -->
+  <script src="https://cdn01.boxcdn.net/platform/preview/2.95.0/en-US/preview.js"></script>
+  <link rel="stylesheet" href="https://cdn01.boxcdn.net/platform/preview/2.95.0/en-US/preview.css" />
+  <script src="bookmark.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var token;
+    var sToken;
+    var gfileId = params.get("id");
+    var gaccessToken;
+    var inPause = false;
+    var i = 0;
+    var duration;
+    //Use to hold whether file has a skillscard already as Box has different function for create and update MD
+    var hasMetadata=false;
+
+    $(document).ready(function () {
+      var preview = new Box.Preview();
+      $.ajax({
+        method: 'post',
+        url:"https://dik4ogwqph.execute-api.eu-west-2.amazonaws.com/default/box-node-token-generator",
+        data: { authCode: params.get('auth'), id: params.get('id'), clientId: params.get('clientId') },
+        crossDomain: true,
+        cache: false,
+        beforeSend: function () {
+          $('#loader').show();
+          $(".container-fluid").hide();
+        },
+        complete: function () {
+          $('#loader').hide();
+          $(".container-fluid").show();
+
+        },
+        success: function (response) {
+          gaccessToken = response.userToken;
+          loadBookmarks();
+          $("#preview-container").show();
+            preview.show(gfileId, gaccessToken, {
+            container: '.preview-container',
+            showDownload: false
+          });
+          preview.addListener('load', (data) => {
+            duration = preview.viewer.mediaEl.duration;
+            $("#save-bookmark").prop('disabled', false);
+
+          });
+          preview.addListener('pause', (data) => {
+            if (inPause) {
+              //$("#bookmarkendtime").val(Math.round(preview.viewer.mediaEl.currentTime * 100) / 100);
+            }
+            else {
+              $("#bookmarkstarttime").val(Math.round(preview.viewer.mediaEl.currentTime * 100) / 100);
+              $("#bookmarkendtime").val((Math.round(preview.viewer.mediaEl.currentTime * 100) / 100)+10);
+              inPause = true;
+            }
+            $("#bend").show();
+
+          });
+        },
+        error: function (err) {
+          console.log(JSON.stringify(err));
+          console.log("error:" + err.message);
+        }
+      });
+
+      $("#submitbutton-bookmark").on('click', function (e) {
+        i++;
+        $(".bookmarks").append("<li uid=" + i + " id=v_" + i + " class='list-group-item d-flex justify-content-between align-items-center ital' bk='" + $("#bookmarkname").val() + "'><span style='width:100px'>" + $("#bookmarkname").val() + "</span><span id='start_" + i + "' class='badge badge-success badge-pill'>" + fancyTimeFormat($("#bookmarkstarttime").val()) + "</span><span id='end_" + i + "' class='badge badge-success badge-pill'>" + fancyTimeFormat($("#bookmarkendtime").val()) + "</span><span  class='badge badge-success badge-pill remove'>x</span></li>")
+        
+
+        $("#bookmarkstarttime").val("0.00");
+        $("#bookmarkendtime").val("0.00");
+        $("#bookmarkname").val("")
+         inPause=false; 
+        $(".remove").click(function (event) {
+          $(this).parent('li').removeClass('d-flex').hide('slow');
+          $("#saveAll").show();
+        });
+      });
+      //Saves the bookmarks back to the file
+      $("#save-bookmark").on('click', function (e) {
+        $("#save-bookmark").hide();
+        $("#spinner").attr("src", "smallspinner.gif");
+        $("#spinner").show();
+        var data = [];
+        
+        $(".list-group-item").each(function (index) {
+          if ($(this).attr('uid')) {
+            if (!$(this).is(":hidden")) {
+              var text = $(this).attr('bk');
+              var start =  $('#start_' + $(this).attr('uid')).text().replace(":",".");
+              var end = $('#end_' + $(this).attr('uid')).text().replace(":",".");
+              var appears =[];
+              appears.push({"start":start,"end": end});
+              var entry = {"text":text,"type":"text","appears":appears};
+              data.push(entry);
+            }
+          }
+        });
+       saveBookmarks(data,duration,hasMetadata);
+      });
+
+    });
+  
+  </script>
+
+</head>
+<style>
+  a,
+  .btn,
+  th,
+  tr,
+  td,
+  button,
+  p,
+  span {
+    font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+  }
+
+  .bp-header {
+    display: none;
+  }
+
+  .bp-header+.bp:not(.bp-is-fullscreen) {
+    top: 1px;
+  }
+</style>
+
+<body style="border:0px;">
+    <img id="loader" src="ajax-loader-gif-1.gif" style="display:none;" />
+  <div class="container-fluid" id="container">
+    <div class="row">
+      <div class="col">
+        <ul class="nav nav-tabs" id="transcodeTab" role="tablist">
+
+          <li class="nav-item">
+            <a class="nav-link" id="bookmark-tab" data-toggle="tab" href="#bookmark" role="tab" aria-controls="bookmark" aria-selected="false">Bookmark</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-8" id="preview" aria-labelledby="preview-tab">
+        <div id="preview-container" class="preview-container" style="height:600px; width:100%;"></div>
+      </div>
+      <div class="col-sm-4">
+        <div class="tab-content" id="transcodeContent">
+
+
+
+
+          <div class="tab-pane fade show active" id="bookmark" role="tabpanel" aria-labelledby="bookmark-tab">
+            <!-- Central Modal Medium Info -->
+            <div class="modal fade" id="bookmarkontentModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabelAudio" aria-hidden="true">
+              <div class="modal-dialog modal-notify modal-info" role="document">
+                <!--Content-->
+                <div class="modal-content">
+                  <!--Header-->
+                  <div class="modal-header bg-primary">
+                    <p class="heading lead text-white">bookmark Extraction</p>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true" class="white-text">&times;</span>
+                    </button>
+                  </div>
+
+
+
+                  <!--Footer-->
+                  <div class="modal-footer justify-content-center">
+                    <a type="button" class="btn btn-primary" data-dismiss="modal">Close</a>
+                  </div>
+                </div>
+                <!--/.Content-->
+              </div>
+            </div>
+            <!-- Central Modal Medium Info-->
+            <table class="table table-striped table-bordered table-hover">
+
+              <tbody>
+                <tr>
+                  <td>Bookmark Start</td>
+                  <td>
+                    <input type="text" id="bookmarkstarttime" name="bookmarkstarttime" value="0:00">
+                    <br>
+
+                  </td>
+                </tr>
+                <tr id=bend>
+                  <td>Bookmark End</td>
+                  <td>
+                    <input type="text" id="bookmarkendtime" name="bookmarkendtime" value="0:00">
+                  </td>
+                </tr>
+                <tr>
+                  <td>Bookmark name</td>
+                  <td>
+                    <input type="text" id="bookmarkname" name="bookmarkname" value="">
+                  </td>
+
+                </tr>
+
+              </tbody>
+            </table>
+
+            <button type="button" id="submitbutton-bookmark" name="submitbutton-bookmark" class="btn btn-primary">Add Bookmark</button>
+            <hr/>
+            <form id="save" class="border border-light">
+              <div id="collabs">
+                <ul class="list-group bookmarks">
+
+                </ul>
+              </div>
+              <br/>
+              <button disabled type="button" id="save-bookmark" name="save-bookmark" class="btn btn-primary">Save Bookmarks</button>
+              <img src='smallspinner.gif' id='spinner' style="display:none;" />
+              <div id="saveMsg"></div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+</body>
+
+</html>
