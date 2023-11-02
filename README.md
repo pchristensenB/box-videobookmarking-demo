@@ -14,13 +14,13 @@ Steps to setup
 
 
 ## Create AWS Lambda function
-For this you need a AWS account. https://aws.amazon.com/free/
+For this you need a AWS account. https://aws.amazon.com/free/. AWS Lambda free tier is quite generous and allows 400K seconds of compute per month. See https://aws.amazon.com/lambda/pricing/
 
-1. When in the AWS console, locate the Lambda page and create new function - box-token-generator or similar. 
+1. When you get to the AWS console, locate the Lambda page (type lambda in the search at the top) and 'Create function' - call it box-token-generator or similar. 
 
 <img src="/img/lambda1.png" width="90%" height="90%">
 
-2. In the repo folder 'box-token-generator' is both a zip file with the code and the actual code. If you want to use as it, upload the zip to the Lambda, if not you can change the code and zip and upload
+2. In the repo folder 'box-token-generator' is both a zip file with the code and the actual code. If you want to use as is, upload the zip to the Lambda, if not you can change the code and zip and upload
 
 <img src="/img/lambda2.png" width="90%" height="90%">
 
@@ -31,7 +31,7 @@ For this you need a AWS account. https://aws.amazon.com/free/
 <img src="/img/lambda4.png" width="90%" height="90%">
 
 ## Deploy to website
-In this example I use GitHub Pages which allows you to serve HTML directly from a GitHub repo. https://pages.github.com/. Just setup the repo and add the files in the root of this repository to the pages repo and it will be available. You can also use a simple local http server if you want, the URL here does not have to be public if only yourself is accessing it.
+In this example I use GitHub Pages which allows you (free of charge) to serve HTML directly from a GitHub repo. https://pages.github.com/. Just setup the repo and add the files in the root of this repository to the pages repo and it will be available. You can also use a simple local http server if you want, the URL here does not have to be public if only yourself is accessing it.
 
 The only change you need to make is to the index.html file. Line 40 has a URL placeholder, replace this with the URL from your AWS Lamdba function
 
