@@ -1,5 +1,5 @@
 # box-videobookmarking-demo
-Shows how a simple integration can be used to add clickable bookmarks to videos in Box
+Shows how a simple integration can be used to add clickable bookmarks to videos in Box. This repo is part of this Box Developer blog post: https://medium.com/box-developer-blog/lets-talk-about-video-bookmarking-864d5c68e3c0
 
 Steps to setup
 
